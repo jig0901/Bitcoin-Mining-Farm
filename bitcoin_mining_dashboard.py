@@ -103,14 +103,14 @@ with tab2:
             df_model_scaled["Hardware Cost ($)"] = df_model["Hardware Cost ($)"] * num_miners / 10
             breakeven = df_model_scaled[df_model_scaled["Cumulative Revenue ($)"] > df_model_scaled["Hardware Cost ($)"].iloc[0]]
 
-            col0, col1, col2, col3 = st.columns(4)
-            col0.metric("Hardware Cost", f"${df_model_scaled['Hardware Cost ($)'].iloc[0]:,.2f}")
-            col1.metric("Total BTC Mined", f"{df_model_scaled['Cumulative BTC'].iloc[-1]:.4f} BTC")
-            col2.metric("Final Net Revenue", f"${df_model_scaled['Final Net Revenue ($)'].iloc[-1]:,.2f}")
+        col0, col1, col2, col3 = st.columns(4)
+        col0.metric("Hardware Cost", f"${df_model_scaled['Hardware Cost ($)'].iloc[0]:,.2f}")
+        col1.metric("Total BTC Mined", f"{df_model_scaled['Cumulative BTC'].iloc[-1]:.4f} BTC")
+        col2.metric("Final Net Revenue", f"${df_model_scaled['Final Net Revenue ($)'].iloc[-1]:,.2f}")
             if not breakeven.empty:
-                col3.metric("Breakeven Date", breakeven.iloc[0]["Date"].strftime("%Y-%m-%d"))
+        col3.metric("Breakeven Date", breakeven.iloc[0]["Date"].strftime("%Y-%m-%d"))
             else:
-                col3.metric("Breakeven Date", "Not Achieved")
+        col3.metric("Breakeven Date", "Not Achieved")
 
             st.line_chart(df_model_scaled[["Date", "Net Daily Revenue ($)"]].set_index("Date"))
 
