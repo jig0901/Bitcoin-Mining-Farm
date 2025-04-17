@@ -21,7 +21,7 @@ with tab1:
         col2.metric("Final Net Revenue", f"${df['Final Net Revenue ($)'].iloc[-1]:,.2f}")
         breakeven_row = df[df['Final Net Revenue ($)'] > 0].iloc[0]
         col3.metric("ROI Breakeven Date", breakeven_row['Date'].strftime("%Y-%m-%d"))
-        st.metric("Hardware Cost (10 units)", f"${{int(df_model['Hardware Cost ($)'].iloc[0]):,}")
+        st.metric("Hardware Cost (10 units)", f"${int(df_model['Hardware Cost ($)'].iloc[0]):,}")
 
         st.subheader("📈 Monthly Revenue")
         st.altair_chart(alt.Chart(monthly_df).mark_line(point=True).encode(
@@ -61,7 +61,7 @@ with tab2:
             col2.metric("Final Net Revenue", f"${df_model['Final Net Revenue ($)'].iloc[-1]:,.2f}")
             breakeven_row = df_model[df_model['Final Net Revenue ($)'] > 0].iloc[0]
             col3.metric("ROI Breakeven Date", breakeven_row['Date'].strftime("%Y-%m-%d"))
-        st.metric("Hardware Cost (10 units)", f"${{int(df_model['Hardware Cost ($)'].iloc[0]):,}")
+        st.metric("Hardware Cost (10 units)", f"${int(df_model['Hardware Cost ($)'].iloc[0]):,}")
 
             
             st.subheader("📊 Cumulative Revenue Over Time")
