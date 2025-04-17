@@ -35,7 +35,10 @@ with tab1:
         ).properties(width=800, height=300), use_container_width=True)
 
         st.subheader("📋 Monthly Revenue & BTC Mined Table")
-        table_df = monthly_df[["Month", "Monthly Revenue ($)", "Monthly BTC Mined"]]
+        monthly_df["Cumulative Revenue ($)"] = monthly_df["Monthly Revenue ($)"].cumsum()
+        monthly_df["Cumulative BTC Mined"] = monthly_df["Monthly BTC Mined"].cumsum()
+        table_df = monthly_df[["Month", "Monthly Revenue ($)", "Monthly BTC Mined", "Cumulative Revenue ($)", "Cumulative BTC Mined"]]
+        st.download_button("⬇️ Download Monthly Data (CSV)", data=table_df.to_csv(index=False), file_name="s19j_monthly_data.csv", mime="text/csv")
         st.dataframe(table_df.style.format({
             "Monthly Revenue ($)": "${:,.2f}",
             "Monthly BTC Mined": "{:,.6f}"
@@ -68,13 +71,17 @@ with tab2:
             st.subheader("📋 Monthly Summary Table")
             df_model['Month'] = df_model['Date'].dt.to_period("M").dt.to_timestamp()
             monthly_group = df_model.groupby("Month").agg({
+                "Cumulative Revenue ($)": "sum",
                 "Net Daily Revenue ($)": "sum",
                 "BTC Mined/Day": "sum"
             }).rename(columns={
                 "Net Daily Revenue ($)": "Monthly Revenue ($)",
                 "BTC Mined/Day": "Monthly BTC Mined"
             }).reset_index()
-            st.dataframe(monthly_group.style.format({
+            monthly_group["Cumulative BTC Mined"] = monthly_group["Monthly BTC Mined"].cumsum()
+        monthly_group["Cumulative Revenue ($)"] = monthly_group["Monthly Revenue ($)"].cumsum()
+        st.download_button("⬇️ Download Monthly Comparison Data (CSV)", data=monthly_group.to_csv(index=False), file_name="comparison_monthly_data.csv", mime="text/csv")
+        st.dataframe(monthly_group.style.format({
                 "Monthly Revenue ($)": "${:,.2f}",
                 "Monthly BTC Mined": "{:,.6f}"
             }), use_container_width=True)
