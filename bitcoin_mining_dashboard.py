@@ -64,8 +64,10 @@ with tab1:
                 monthly_df[col] *= scale_factor
 
         st.subheader("🔑 Key Metrics")
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Total BTC Mined", f"{df['Cumulative BTC'].iloc[-1]:.4f} BTC")
+        col0, col1, col2, col3 = st.columns(4)
+                    col0, col1, col2, col3 = st.columns(4)
+            col0.metric("Hardware Cost", f"${df_model_scaled['Hardware Cost ($)'].iloc[0]:,.2f}")
+            col1.metric("Total BTC Mined", f"{df['Cumulative BTC'].iloc[-1]:.4f} BTC")
         col2.metric("Final Net Revenue", f"${df['Final Net Revenue ($)'].iloc[-1]:,.2f}")
         breakeven = df[df['Final Net Revenue ($)'] > 0]
         if not breakeven.empty:
@@ -98,7 +100,9 @@ with tab2:
             df_model_scaled["Hardware Cost ($)"] = df_model["Hardware Cost ($)"] * num_miners / 10
             breakeven = df_model_scaled[df_model_scaled["Cumulative Revenue ($)"] > df_model_scaled["Hardware Cost ($)"].iloc[0]]
 
-            col1, col2, col3 = st.columns(3)
+            col0, col1, col2, col3 = st.columns(4)
+                        col0, col1, col2, col3 = st.columns(4)
+            col0.metric("Hardware Cost", f"${df_model_scaled['Hardware Cost ($)'].iloc[0]:,.2f}")
             col1.metric("Total BTC Mined", f"{df_model_scaled['Cumulative BTC'].iloc[-1]:.4f} BTC")
             col2.metric("Final Net Revenue", f"${df_model_scaled['Final Net Revenue ($)'].iloc[-1]:,.2f}")
             if not breakeven.empty:
