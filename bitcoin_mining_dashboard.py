@@ -1,10 +1,11 @@
-
 import streamlit as st
 import pandas as pd
 import altair as alt
 
-st.set_page_config(page_title="Bitcoin Mining ROI Dashboard", layout="wide")
-st.title("📊 Bitcoin Mining ROI Dashboard")
+# 1) Updated page title
+st.set_page_config(page_title="Used Bitcoin Mining Farm ROI Dashboard", layout="wide")
+# 1) Updated app title
+st.title("📊 Used Bitcoin Mining Farm ROI Dashboard")
 
 # Preload Excel files
 projection_file = "Bitcoin_Mining_Projection_DashboardUI.xlsx"
@@ -24,28 +25,45 @@ with tab1:
     col3.metric("ROI Breakeven Date", breakeven_row['Date'].strftime("%Y-%m-%d"))
 
     st.subheader("📈 Monthly Revenue")
-    st.altair_chart(alt.Chart(monthly_df).mark_line(point=True).encode(
-        x='Month:T',
-        y='Monthly Revenue ($):Q'
-    ).properties(width=800, height=300), use_container_width=True)
+    st.altair_chart(
+        alt.Chart(monthly_df).mark_line(point=True).encode(
+            x='Month:T',
+            y='Monthly Revenue ($):Q'
+        ).properties(width=800, height=300),
+        use_container_width=True
+    )
 
     st.subheader("🪙 Monthly BTC Mined")
-    st.altair_chart(alt.Chart(monthly_df).mark_line(point=True, color="orange").encode(
-        x='Month:T',
-        y='Monthly BTC Mined:Q'
-    ).properties(width=800, height=300), use_container_width=True)
+    st.altair_chart(
+        alt.Chart(monthly_df).mark_line(point=True, color="orange").encode(
+            x='Month:T',
+            y='Monthly BTC Mined:Q'
+        ).properties(width=800, height=300),
+        use_container_width=True
+    )
 
     st.subheader("📋 Monthly Revenue & BTC Mined Table")
     monthly_df["Cumulative Revenue ($)"] = monthly_df["Monthly Revenue ($)"].cumsum()
     monthly_df["Cumulative BTC Mined"] = monthly_df["Monthly BTC Mined"].cumsum()
-    table_df = monthly_df[["Month", "Monthly Revenue ($)", "Monthly BTC Mined", "Cumulative Revenue ($)", "Cumulative BTC Mined"]]
-    st.download_button("⬇️ Download Monthly Data (CSV)", data=table_df.to_csv(index=False), file_name="s19j_monthly_data.csv", mime="text/csv")
-    st.dataframe(table_df.style.format({
-        "Monthly Revenue ($)": "${:,.2f}",
-        "Monthly BTC Mined": "{:,.6f}",
-        "Cumulative Revenue ($)": "${:,.2f}",
-        "Cumulative BTC Mined": "{:,.6f}"
-    }), use_container_width=True)
+    table_df = monthly_df[[
+        "Month", "Monthly Revenue ($)", "Monthly BTC Mined",
+        "Cumulative Revenue ($)", "Cumulative BTC Mined"
+    ]]
+    st.download_button(
+        "⬇️ Download Monthly Data (CSV)",
+        data=table_df.to_csv(index=False),
+        file_name="s19j_monthly_data.csv",
+        mime="text/csv"
+    )
+    st.dataframe(
+        table_df.style.format({
+            "Monthly Revenue ($)": "${:,.2f}",
+            "Monthly BTC Mined": "{:,.6f}",
+            "Cumulative Revenue ($)": "${:,.2f}",
+            "Cumulative BTC Mined": "{:,.6f}"
+        }),
+        use_container_width=True
+    )
 
 with tab2:
     st.header("📊 Antminer Comparison")
@@ -53,13 +71,22 @@ with tab2:
     models = ["S19j Pro", "S19 XP", "S21 Hydro"]
     for model in models:
         st.subheader(f"📈 {model} ROI")
-        df_model = pd.read_excel(comparison_file, sheet_name=model, engine="openpyxl")
+
+        # 2) Make S19j Pro use the same projection file as Tab 1
+        if model == "S19j Pro":
+            df_model = pd.read_excel(projection_file, sheet_name="Sheet1", engine="openpyxl")
+        else:
+            df_model = pd.read_excel(comparison_file, sheet_name=model, engine="openpyxl")
 
         col1, col2, col3 = st.columns(3)
         col1.metric("Total BTC Mined", f"{df_model['Cumulative BTC'].iloc[-1]:.4f} BTC")
         col2.metric("Final Net Revenue", f"${df_model['Final Net Revenue ($)'].iloc[-1]:,.2f}")
         col3.metric("Hardware Cost (10 units)", f"${int(df_model['Hardware Cost ($)'].iloc[0]):,}")
-        breakeven_row = df_model[df_model['Cumulative Revenue ($)'] > df_model['Hardware Cost ($)'].iloc[0]].iloc[0]
+
+        # Breakeven based on hardware cost
+        breakeven_row = df_model[
+            df_model['Cumulative Revenue ($)'] > df_model['Hardware Cost ($)'].iloc[0]
+        ].iloc[0]
         st.metric("ROI Breakeven Date", breakeven_row['Date'].strftime("%Y-%m-%d"))
 
         st.subheader("📊 Cumulative Revenue Over Time")
@@ -77,13 +104,22 @@ with tab2:
         }).reset_index()
         monthly_group["Cumulative BTC Mined"] = monthly_group["Monthly BTC Mined"].cumsum()
         monthly_group["Cumulative Revenue ($)"] = monthly_group["Monthly Revenue ($)"].cumsum()
-        st.download_button("⬇️ Download Monthly Comparison Data (CSV)", data=monthly_group.to_csv(index=False), file_name=f"{model.lower()}_monthly_data.csv", mime="text/csv")
-        st.dataframe(monthly_group.style.format({
-            "Monthly Revenue ($)": "${:,.2f}",
-            "Monthly BTC Mined": "{:,.6f}",
-            "Cumulative Revenue ($)": "${:,.2f}",
-            "Cumulative BTC Mined": "{:,.6f}"
-        }), use_container_width=True)
+
+        st.download_button(
+            "⬇️ Download Monthly Comparison Data (CSV)",
+            data=monthly_group.to_csv(index=False),
+            file_name=f"{model.lower()}_monthly_data.csv",
+            mime="text/csv"
+        )
+        st.dataframe(
+            monthly_group.style.format({
+                "Monthly Revenue ($)": "${:,.2f}",
+                "Monthly BTC Mined": "{:,.6f}",
+                "Cumulative Revenue ($)": "${:,.2f}",
+                "Cumulative BTC Mined": "{:,.6f}"
+            }),
+            use_container_width=True
+        )
 
     st.subheader("📊 ROI Comparison Summary")
     st.image("roi_chart.png")
@@ -96,7 +132,7 @@ with tab3:
 ### 💡 Setup Cost Breakdown
 
 | Component                     | Description                                                                 | Estimated Cost |
-|------------------------------|-----------------------------------------------------------------------------|----------------|
+|-------------------------------|-----------------------------------------------------------------------------|----------------|
 | ⚡ **Power Installation**     | 100 ft trench, 240V line, conduit, wire, breakers, subpanel, electrician   | **$3,245**     |
 | 🗄️ **Mining Rack**            | Heavy-duty vertical rack for 10 Antminers                                  | **$600**       |
 | 🔌 **PDUs**                   | Industrial-grade Power Distribution Units (e.g., L6-30P, C13/C19 outlets)   | **$400**       |
