@@ -65,6 +65,7 @@ with tab1:
 
         st.subheader("🔑 Key Metrics")
         col0, col1, col2, col3 = st.columns(4)
+            col0, col1, col2, col3 = st.columns(4)
                     col0, col1, col2, col3 = st.columns(4)
             col0.metric("Hardware Cost", f"${df_model_scaled['Hardware Cost ($)'].iloc[0]:,.2f}")
             col1.metric("Total BTC Mined", f"{df['Cumulative BTC'].iloc[-1]:.4f} BTC")
