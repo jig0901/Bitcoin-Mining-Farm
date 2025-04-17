@@ -18,7 +18,6 @@ def fetch_btc_price():
 projection_file = "Bitcoin_Mining_Projection_DashboardUI.xlsx"
 comparison_file = "Bitcoin_Mining_Comparison_WithHardwareCost.xlsx"
 
-# UI setup
 st.set_page_config(page_title="Bitcoin Mining ROI Dashboard", layout="wide")
 refresh_interval = st.sidebar.selectbox("🔁 Refresh BTC Price Every", [1, 5, 10], index=1)
 btc_price = fetch_btc_price()
@@ -44,7 +43,6 @@ Welcome to the **Bitcoin Mining ROI Dashboard** — a live and interactive view 
 Use the tabs above to explore detailed ROI calculations and charts.
     """)
 
-
 with tab1:
     btc_trend = st.radio("📈 Bitcoin Price Trend", ["Bullish", "Bearish"], index=0)
     trend_suffix = "_Bullish" if btc_trend == "Bullish" else "_Bearish"
@@ -64,11 +62,8 @@ with tab1:
                 monthly_df[col] *= scale_factor
 
         st.subheader("🔑 Key Metrics")
-        col0, col1, col2, col3 = st.columns(4)
-            col0, col1, col2, col3 = st.columns(4)
-                    col0, col1, col2, col3 = st.columns(4)
-            col0.metric("Hardware Cost", f"${df_model_scaled['Hardware Cost ($)'].iloc[0]:,.2f}")
-            col1.metric("Total BTC Mined", f"{df['Cumulative BTC'].iloc[-1]:.4f} BTC")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Total BTC Mined", f"{df['Cumulative BTC'].iloc[-1]:.4f} BTC")
         col2.metric("Final Net Revenue", f"${df['Final Net Revenue ($)'].iloc[-1]:,.2f}")
         breakeven = df[df['Final Net Revenue ($)'] > 0]
         if not breakeven.empty:
@@ -87,8 +82,6 @@ with tab1:
             "Cumulative Revenue ($)": "${:,.2f}",
             "Cumulative BTC Mined": "{:,.6f}"
         }), use_container_width=True)
-
-
 
 with tab2:
     if os.path.exists(comparison_file):
