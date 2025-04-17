@@ -2,27 +2,35 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
-# 1) Updated page title
-st.set_page_config(page_title="Used Bitcoin Mining Farm ROI Dashboard", layout="wide")
-# 1) Updated app title
+# ─── Page setup ────────────────────────────────────────────────────────────────
+st.set_page_config(
+    page_title="Used Bitcoin Mining Farm ROI Dashboard",
+    layout="wide"
+)
 st.title("📊 Used Bitcoin Mining Farm ROI Dashboard")
 
-# Preload Excel files
+# ─── Data files ────────────────────────────────────────────────────────────────
 projection_file = "Bitcoin_Mining_Projection_DashboardUI.xlsx"
 comparison_file = "Bitcoin_Mining_Comparison_WithHardwareCost.xlsx"
 
-tab1, tab2, tab3 = st.tabs(["S19j Pro ROI", "Compare Miners", "Setup Cost Details"])
+# ─── Tabs ──────────────────────────────────────────────────────────────────────
+tab1, tab2, tab3 = st.tabs([
+    "S19j Pro ROI",
+    "Compare Miners",
+    "Setup Cost Details"
+])
 
+# ─── Tab1: S19j Pro detailed projection ────────────────────────────────────────
 with tab1:
     df = pd.read_excel(projection_file, sheet_name="Sheet1", engine="openpyxl")
     monthly_df = pd.read_excel(projection_file, sheet_name="Monthly Summary", engine="openpyxl")
 
     st.subheader("🔑 Key Metrics")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Total BTC Mined", f"{df['Cumulative BTC'].iloc[-1]:.4f} BTC")
-    col2.metric("Final Net Revenue", f"${df['Final Net Revenue ($)'].iloc[-1]:,.2f}")
-    breakeven_row = df[df['Final Net Revenue ($)'] > 0].iloc[0]
-    col3.metric("ROI Breakeven Date", breakeven_row['Date'].strftime("%Y-%m-%d"))
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Total BTC Mined", f"{df['Cumulative BTC'].iloc[-1]:.4f} BTC")
+    c2.metric("Final Net Revenue", f"${df['Final Net Revenue ($)'].iloc[-1]:,.2f}")
+    breakeven = df[df['Final Net Revenue ($)'] > 0].iloc[0]
+    c3.metric("ROI Breakeven Date", breakeven['Date'].strftime("%Y-%m-%d"))
 
     st.subheader("📈 Monthly Revenue")
     st.altair_chart(
@@ -46,8 +54,11 @@ with tab1:
     monthly_df["Cumulative Revenue ($)"] = monthly_df["Monthly Revenue ($)"].cumsum()
     monthly_df["Cumulative BTC Mined"] = monthly_df["Monthly BTC Mined"].cumsum()
     table_df = monthly_df[[
-        "Month", "Monthly Revenue ($)", "Monthly BTC Mined",
-        "Cumulative Revenue ($)", "Cumulative BTC Mined"
+        "Month",
+        "Monthly Revenue ($)",
+        "Monthly BTC Mined",
+        "Cumulative Revenue ($)",
+        "Cumulative BTC Mined"
     ]]
     st.download_button(
         "⬇️ Download Monthly Data (CSV)",
@@ -65,6 +76,7 @@ with tab1:
         use_container_width=True
     )
 
+# ─── Tab2: Compare Miners ───────────────────────────────────────────────────────
 with tab2:
     st.header("📊 Antminer Comparison")
 
@@ -72,27 +84,62 @@ with tab2:
     for model in models:
         st.subheader(f"📈 {model} ROI")
 
-        # 2) Make S19j Pro use the same projection file as Tab 1
         if model == "S19j Pro":
-            df_model = pd.read_excel(projection_file, sheet_name="Sheet1", engine="openpyxl")
+            # — Use your projection sheet for S19j Pro…
+            df_model = pd.read_excel(
+                projection_file,
+                sheet_name="Sheet1",
+                engine="openpyxl"
+            )
+            # …but grab its hardware cost from the comparison workbook
+            cost_df = pd.read_excel(
+                comparison_file,
+                sheet_name="S19j Pro",
+                usecols=["Hardware Cost ($)"],
+                engine="openpyxl"
+            )
+            hw_cost = int(cost_df["Hardware Cost ($)"].iloc[0])
+            df_model["Hardware Cost ($)"] = hw_cost
+            df_model["Model"] = "S19j Pro"
         else:
-            df_model = pd.read_excel(comparison_file, sheet_name=model, engine="openpyxl")
+            df_model = pd.read_excel(
+                comparison_file,
+                sheet_name=model,
+                engine="openpyxl"
+            )
 
+        # Metrics
         col1, col2, col3 = st.columns(3)
-        col1.metric("Total BTC Mined", f"{df_model['Cumulative BTC'].iloc[-1]:.4f} BTC")
-        col2.metric("Final Net Revenue", f"${df_model['Final Net Revenue ($)'].iloc[-1]:,.2f}")
-        col3.metric("Hardware Cost (10 units)", f"${int(df_model['Hardware Cost ($)'].iloc[0]):,}")
+        col1.metric(
+            "Total BTC Mined",
+            f"{df_model['Cumulative BTC'].iloc[-1]:.4f} BTC"
+        )
+        col2.metric(
+            "Final Net Revenue",
+            f"${df_model['Final Net Revenue ($)'].iloc[-1]:,.2f}"
+        )
+        col3.metric(
+            "Hardware Cost (10 units)",
+            f"${int(df_model['Hardware Cost ($)'].iloc[0]):,}"
+        )
 
-        # Breakeven based on hardware cost
+        # Breakeven
         breakeven_row = df_model[
             df_model['Cumulative Revenue ($)'] > df_model['Hardware Cost ($)'].iloc[0]
         ].iloc[0]
-        st.metric("ROI Breakeven Date", breakeven_row['Date'].strftime("%Y-%m-%d"))
+        st.metric(
+            "ROI Breakeven Date",
+            breakeven_row['Date'].strftime("%Y-%m-%d")
+        )
 
+        # Cumulative revenue chart
         st.subheader("📊 Cumulative Revenue Over Time")
         df_model["Cumulative Revenue ($)"] = df_model["Net Daily Revenue ($)"].cumsum()
-        st.line_chart(df_model[["Date", "Cumulative Revenue ($)"]].set_index("Date"))
+        st.line_chart(
+            df_model[["Date", "Cumulative Revenue ($)"]].set_index("Date")
+        )
 
+        # Monthly summary table
         st.subheader("📋 Monthly Summary Table")
         df_model["Month"] = df_model["Date"].dt.to_period("M").dt.to_timestamp()
         monthly_group = df_model.groupby("Month").agg({
@@ -127,6 +174,7 @@ with tab2:
     st.subheader("⏱️ Payback Time to Recover Hardware Cost")
     st.image("payback_chart.png")
 
+# ─── Tab3: Setup Cost Breakdown ────────────────────────────────────────────────
 with tab3:
     st.markdown("""
 ### 💡 Setup Cost Breakdown
