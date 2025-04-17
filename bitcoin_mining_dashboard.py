@@ -1,6 +1,5 @@
 # placeholder for bitcoin_mining_dashboard.py
 
-with tab3:
         st.markdown("""
     ### 💡 Setup Cost Breakdown
 
