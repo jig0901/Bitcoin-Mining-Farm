@@ -46,7 +46,7 @@ Use the tabs above to explore detailed ROI calculations and charts.
 
 with tab1:
     if os.path.exists(projection_file):
-        df = pd.read_excel(projection_file, sheet_name="Sheet1", engine="openpyxl")
+        
         btc_trend = st.radio("📈 Bitcoin Price Trend", ["Bullish", "Bearish"], index=0)
         trend_suffix = "_Bullish" if btc_trend == "Bullish" else "_Bearish"
         sheet1 = f"Sheet1{trend_suffix}"
@@ -54,7 +54,15 @@ with tab1:
         df = pd.read_excel(projection_file, sheet_name=sheet1, engine="openpyxl")
         monthly_df = pd.read_excel(projection_file, sheet_name=summary, engine="openpyxl")
 
-        scale_factor = num_miners / 10
+        
+btc_trend = st.radio("📈 Bitcoin Price Trend", ["Bullish", "Bearish"], index=0)
+trend_suffix = "_Bullish" if btc_trend == "Bullish" else "_Bearish"
+sheet1 = f"Sheet1{trend_suffix}"
+summary = f"Monthly{trend_suffix}"
+df = pd.read_excel(projection_file, sheet_name=sheet1, engine="openpyxl")
+monthly_df = pd.read_excel(projection_file, sheet_name=summary, engine="openpyxl")
+
+scale_factor = num_miners / 10
         for col in ["BTC Mined/Day", "Daily Revenue ($)", "Net Daily Revenue ($)", "Cumulative BTC", "Cumulative Net Revenue ($)", "Final Net Revenue ($)"]:
             if col in df.columns:
                 df[col] *= scale_factor
