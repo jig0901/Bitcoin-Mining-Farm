@@ -21,7 +21,6 @@ with tab1:
         col2.metric("Final Net Revenue", f"${df['Final Net Revenue ($)'].iloc[-1]:,.2f}")
         breakeven_row = df[df['Final Net Revenue ($)'] > 0].iloc[0]
         col3.metric("ROI Breakeven Date", breakeven_row['Date'].strftime("%Y-%m-%d"))
-        st.metric("Hardware Cost (10 units)", f"${int(df_model['Hardware Cost ($)'].iloc[0]):,}")
 
         st.subheader("📈 Monthly Revenue")
         st.altair_chart(alt.Chart(monthly_df).mark_line(point=True).encode(
@@ -55,25 +54,16 @@ with tab2:
         for model in models:
             st.subheader(f"📈 {model} ROI")
             df_model = pd.read_excel(comparison_file, sheet_name=model, engine="openpyxl")
-
             col1, col2, col3 = st.columns(3)
             col1.metric("Total BTC Mined", f"{df_model['Cumulative BTC'].iloc[-1]:.4f} BTC")
             col2.metric("Final Net Revenue", f"${df_model['Final Net Revenue ($)'].iloc[-1]:,.2f}")
-            breakeven_row = df_model[df_model['Final Net Revenue ($)'] > 0].iloc[0]
-            col3.metric("ROI Breakeven Date", breakeven_row['Date'].strftime("%Y-%m-%d"))
-        st.metric("Hardware Cost (10 units)", f"${int(df_model['Hardware Cost ($)'].iloc[0]):,}")
+            col3.metric("Hardware Cost (10 units)", f"${int(df_model['Hardware Cost ($)'].iloc[0]):,}")
+            breakeven_row = df_model[df_model['Cumulative Revenue ($)'] > df_model['Hardware Cost ($)'].iloc[0]].iloc[0]
+            st.metric("ROI Breakeven Date", breakeven_row['Date'].strftime("%Y-%m-%d"))
 
-            
             st.subheader("📊 Cumulative Revenue Over Time")
             df_model["Cumulative Revenue ($)"] = df_model["Net Daily Revenue ($)"].cumsum()
             st.line_chart(df_model[["Date", "Cumulative Revenue ($)"]].set_index("Date"))
-        st.subheader('📊 ROI Comparison Summary')
-        st.image('roi_chart.png')
-        st.subheader('⏱️ Payback Time to Recover Hardware Cost')
-        st.image('payback_chart.png')
-st.altair_chart(alt.Chart(df_model).mark_line().encode(
-                x='Date:T', y='Final Net Revenue ($):Q'
-            ).properties(height=300), use_container_width=True)
 
             st.subheader("📋 Monthly Summary Table")
             df_model['Month'] = df_model['Date'].dt.to_period("M").dt.to_timestamp()
@@ -88,6 +78,12 @@ st.altair_chart(alt.Chart(df_model).mark_line().encode(
                 "Monthly Revenue ($)": "${:,.2f}",
                 "Monthly BTC Mined": "{:,.6f}"
             }), use_container_width=True)
+
+        st.subheader("📊 ROI Comparison Summary")
+        st.image("roi_chart.png")
+
+        st.subheader("⏱️ Payback Time to Recover Hardware Cost")
+        st.image("payback_chart.png")
 
 with tab3:
     st.markdown("""
