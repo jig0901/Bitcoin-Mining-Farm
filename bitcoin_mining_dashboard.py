@@ -34,8 +34,13 @@ with tab1:
             y='Monthly BTC Mined:Q'
         ).properties(width=800, height=300), use_container_width=True)
 
-        with st.expander("🔍 View Raw Data"):
-            st.dataframe(monthly_df)
+        st.subheader("📋 Monthly Revenue & BTC Mined Table")
+        table_df = monthly_df[["Month", "Monthly Revenue ($)", "Monthly BTC Mined"]]
+        st.dataframe(table_df.style.format({
+            "Monthly Revenue ($)": "${:,.2f}",
+            "Monthly BTC Mined": "{:,.6f}"
+        }), use_container_width=True)
+
     else:
         st.info("Please upload the Excel file for S19j Pro ROI.")
 
@@ -49,14 +54,30 @@ with tab2:
         for model in models:
             st.subheader(f"📈 {model} ROI")
             df_model = pd.read_excel(comparison_file, sheet_name=model, engine="openpyxl")
+
             col1, col2, col3 = st.columns(3)
             col1.metric("Total BTC Mined", f"{df_model['Cumulative BTC'].iloc[-1]:.4f} BTC")
             col2.metric("Final Net Revenue", f"${df_model['Final Net Revenue ($)'].iloc[-1]:,.2f}")
             breakeven_row = df_model[df_model['Final Net Revenue ($)'] > 0].iloc[0]
             col3.metric("ROI Breakeven Date", breakeven_row['Date'].strftime("%Y-%m-%d"))
+
             st.altair_chart(alt.Chart(df_model).mark_line().encode(
                 x='Date:T', y='Final Net Revenue ($):Q'
             ).properties(height=300), use_container_width=True)
+
+            st.subheader("📋 Monthly Summary Table")
+            df_model['Month'] = df_model['Date'].dt.to_period("M").dt.to_timestamp()
+            monthly_group = df_model.groupby("Month").agg({
+                "Net Daily Revenue ($)": "sum",
+                "BTC Mined/Day": "sum"
+            }).rename(columns={
+                "Net Daily Revenue ($)": "Monthly Revenue ($)",
+                "BTC Mined/Day": "Monthly BTC Mined"
+            }).reset_index()
+            st.dataframe(monthly_group.style.format({
+                "Monthly Revenue ($)": "${:,.2f}",
+                "Monthly BTC Mined": "{:,.6f}"
+            }), use_container_width=True)
 
 with tab3:
     st.markdown("""
@@ -71,4 +92,4 @@ with tab3:
 | 🔇 **Soundproofing Materials**| Mineral wool, foam insulation, door seals                                  | **$450**       |
 
 **Total Setup Cost: $5,445**
-""")
+    """)
