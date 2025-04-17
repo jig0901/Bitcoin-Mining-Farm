@@ -84,7 +84,9 @@ with tab1:
 # Skipping tab2 & tab3 for now to focus update on S19j Pro tab with miner count & view toggle
 
 
-    elif os.path.exists(comparison_file):
+
+with tab2:
+    if os.path.exists(comparison_file):
         try:
             st.header("📊 Compare Used Miners")
             models = ["S19j Pro", "S19 XP", "S21 Hydro"]
