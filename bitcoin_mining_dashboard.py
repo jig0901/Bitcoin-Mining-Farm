@@ -82,3 +82,59 @@ with tab1:
         st.warning(f"📁 File not found: {projection_file}. Please ensure it's in the same directory.")
 
 # Skipping tab2 & tab3 for now to focus update on S19j Pro tab with miner count & view toggle
+
+
+    elif os.path.exists(comparison_file):
+        try:
+            st.header("📊 Compare Used Miners")
+            models = ["S19j Pro", "S19 XP", "S21 Hydro"]
+            for model in models:
+                st.subheader(f"📈 {model} ROI")
+                df_model = pd.read_excel(comparison_file, sheet_name=model, engine="openpyxl")
+                df_model_scaled = df_model.copy()
+                for col in ["BTC Mined/Day", "Net Daily Revenue ($)", "Cumulative Revenue ($)", "Cumulative BTC", "Final Net Revenue ($)"]:
+                    if col in df_model_scaled.columns:
+                        df_model_scaled[col] = df_model_scaled[col] * num_miners / 10
+                df_model_scaled["Hardware Cost ($)"] = df_model["Hardware Cost ($)"] * num_miners / 10
+                breakeven = df_model_scaled[df_model_scaled["Cumulative Revenue ($)"] > df_model_scaled["Hardware Cost ($)"].iloc[0]]
+
+                col1, col2, col3 = st.columns(3)
+                col1.metric("Total BTC Mined", f"{df_model_scaled['Cumulative BTC'].iloc[-1]:.4f} BTC")
+                col2.metric("Final Net Revenue", f"${df_model_scaled['Final Net Revenue ($)'].iloc[-1]:,.2f}")
+                if not breakeven.empty:
+                    col3.metric("ROI Breakeven Date", breakeven.iloc[0]["Date"].strftime("%Y-%m-%d"))
+                else:
+                    col3.metric("ROI Breakeven Date", "Not Achieved")
+
+                if view_mode == "Monthly":
+                    df_model_scaled["Month"] = df_model_scaled["Date"].dt.to_period("M").dt.to_timestamp()
+                    monthly_group = df_model_scaled.groupby("Month").agg({
+                        "Net Daily Revenue ($)": "sum",
+                        "BTC Mined/Day": "sum"
+                    }).rename(columns={
+                        "Net Daily Revenue ($)": "Monthly Revenue ($)",
+                        "BTC Mined/Day": "Monthly BTC Mined"
+                    }).reset_index()
+                    monthly_group["Cumulative Revenue ($)"] = monthly_group["Monthly Revenue ($)"].cumsum()
+                    monthly_group["Cumulative BTC Mined"] = monthly_group["Monthly BTC Mined"].cumsum()
+
+                    st.altair_chart(alt.Chart(monthly_group).mark_line(point=True).encode(
+                        x="Month:T", y="Monthly Revenue ($):Q"
+                    ).properties(height=300), use_container_width=True)
+
+                    st.dataframe(monthly_group.style.format({
+                        "Monthly Revenue ($)": "${:,.2f}",
+                        "Monthly BTC Mined": "{:,.6f}",
+                        "Cumulative Revenue ($)": "${:,.2f}",
+                        "Cumulative BTC Mined": "{:,.6f}"
+                    }), use_container_width=True)
+                else:
+                    st.line_chart(df_model_scaled[["Date", "Net Daily Revenue ($)"]].set_index("Date"))
+                    st.dataframe(df_model_scaled[["Date", "BTC Mined/Day", "Net Daily Revenue ($)", "Cumulative BTC", "Cumulative Revenue ($)"]].style.format({
+                        "Net Daily Revenue ($)": "${:,.2f}",
+                        "BTC Mined/Day": "{:,.6f}",
+                        "Cumulative Revenue ($)": "${:,.2f}",
+                        "Cumulative BTC": "{:,.6f}"
+                    }), use_container_width=True)
+        except Exception as e:
+            st.error(f"❌ Error loading comparison file: {e}")
