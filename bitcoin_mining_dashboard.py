@@ -44,48 +44,48 @@ Welcome to the **Bitcoin Mining ROI Dashboard** — a live and interactive view 
 Use the tabs above to explore detailed ROI calculations and charts.
     """)
 
+
 with tab1:
+    btc_trend = st.radio("📈 Bitcoin Price Trend", ["Bullish", "Bearish"], index=0)
+    trend_suffix = "_Bullish" if btc_trend == "Bullish" else "_Bearish"
+    sheet1 = f"Sheet1{trend_suffix}"
+    summary = f"Monthly{trend_suffix}"
+
     if os.path.exists(projection_file):
-        btc_trend = st.radio("📈 Bitcoin Price Trend", ["Bullish", "Bearish"], index=0)
-    trend_suffix = "_Bullish" if btc_trend == "Bullish" else "_Bearish"
-    sheet1 = f"Sheet1{trend_suffix}"
-    summary = f"Monthly{trend_suffix}"
-    df = pd.read_excel(projection_file, sheet_name=sheet1, engine="openpyxl")
-    monthly_df = pd.read_excel(projection_file, sheet_name=summary, engine="openpyxl")
-            btc_trend = st.radio("📈 Bitcoin Price Trend", ["Bullish", "Bearish"], index=0)
-    trend_suffix = "_Bullish" if btc_trend == "Bullish" else "_Bearish"
-    sheet1 = f"Sheet1{trend_suffix}"
-    summary = f"Monthly{trend_suffix}"
-    df = pd.read_excel(projection_file, sheet_name=sheet1, engine="openpyxl")
-    monthly_df = pd.read_excel(projection_file, sheet_name=summary, engine="openpyxl")
+        df = pd.read_excel(projection_file, sheet_name=sheet1, engine="openpyxl")
+        monthly_df = pd.read_excel(projection_file, sheet_name=summary, engine="openpyxl")
+
         scale_factor = num_miners / 10
-    for col in ["BTC Mined/Day", "Daily Revenue ($)", "Net Daily Revenue ($)", "Cumulative BTC", "Cumulative Net Revenue ($)", "Final Net Revenue ($)"]:
-    if col in df.columns:
-    df[col] *= scale_factor
-    for col in ["Monthly Revenue ($)", "Monthly BTC Mined", "Cumulative Revenue ($)", "Cumulative BTC Mined"]:
-    if col in monthly_df.columns:
-    monthly_df[col] *= scale_factor
+        for col in ["BTC Mined/Day", "Daily Revenue ($)", "Net Daily Revenue ($)", "Cumulative BTC", "Cumulative Net Revenue ($)", "Final Net Revenue ($)"]:
+            if col in df.columns:
+                df[col] *= scale_factor
+        for col in ["Monthly Revenue ($)", "Monthly BTC Mined", "Cumulative Revenue ($)", "Cumulative BTC Mined"]:
+            if col in monthly_df.columns:
+                monthly_df[col] *= scale_factor
+
         st.subheader("🔑 Key Metrics")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Total BTC Mined", f"{df['Cumulative BTC'].iloc[-1]:.4f} BTC")
-    col2.metric("Final Net Revenue", f"${df['Final Net Revenue ($)'].iloc[-1]:,.2f}")
-    breakeven = df[df['Final Net Revenue ($)'] > 0]
-    if not breakeven.empty:
-    col3.metric("ROI Breakeven", breakeven.iloc[0]["Date"].strftime("%Y-%m-%d"))
-    else:
-    col3.metric("ROI Breakeven", "Not Achieved")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Total BTC Mined", f"{df['Cumulative BTC'].iloc[-1]:.4f} BTC")
+        col2.metric("Final Net Revenue", f"${df['Final Net Revenue ($)'].iloc[-1]:,.2f}")
+        breakeven = df[df['Final Net Revenue ($)'] > 0]
+        if not breakeven.empty:
+            col3.metric("ROI Breakeven", breakeven.iloc[0]["Date"].strftime("%Y-%m-%d"))
+        else:
+            col3.metric("ROI Breakeven", "Not Achieved")
+
         st.subheader("📊 Monthly Revenue")
-    st.line_chart(monthly_df.set_index("Month")[["Monthly Revenue ($)"]])
+        st.line_chart(monthly_df.set_index("Month")[["Monthly Revenue ($)"]])
         st.subheader("📊 Monthly BTC Mined")
-    st.line_chart(monthly_df.set_index("Month")[["Monthly BTC Mined"]])
+        st.line_chart(monthly_df.set_index("Month")[["Monthly BTC Mined"]])
         st.subheader("📋 Monthly Projection Table")
-    st.dataframe(monthly_df.style.format({
-    "Monthly Revenue ($)": "${:,.2f}",
-    "Monthly BTC Mined": "{:,.6f}",
-    "Cumulative Revenue ($)": "${:,.2f}",
-    "Cumulative BTC Mined": "{:,.6f}"
-    }), use_container_width=True)
-    with tab2:
+        st.dataframe(monthly_df.style.format({
+            "Monthly Revenue ($)": "${:,.2f}",
+            "Monthly BTC Mined": "{:,.6f}",
+            "Cumulative Revenue ($)": "${:,.2f}",
+            "Cumulative BTC Mined": "{:,.6f}"
+        }), use_container_width=True)
+
+with tab2:
     if os.path.exists(comparison_file):
         models = ["S19j Pro", "S19 XP", "S21 Hydro"]
         for model in models:
