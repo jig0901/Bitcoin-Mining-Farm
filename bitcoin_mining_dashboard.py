@@ -5,6 +5,35 @@ import altair as alt
 import os
 import requests
 import time
+
+# Fetch live BTC price
+@st.cache_data(ttl=60)
+def fetch_btc_price():
+    try:
+        url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
+        response = requests.get(url)
+        return response.json()["bitcoin"]["usd"]
+    except:
+        return 85000  # fallback
+
+# Sidebar config
+st.set_page_config(page_title="Used Bitcoin Mining ROI Dashboard", layout="wide")
+refresh_interval = st.sidebar.selectbox("🔁 Refresh BTC Price Every", [1, 5, 10], index=1)
+
+# Simulated native refresh using cache ttl
+btc_price = fetch_btc_price()
+
+# Header with live BTC price
+st.title("📊 Used Bitcoin Mining ROI Dashboard")
+st.subheader(f"💰 Live BTC Price: ${btc_price:,.2f} (updates every {refresh_interval} min — reload page manually)")
+
+
+import streamlit as st
+import pandas as pd
+import altair as alt
+import os
+import requests
+import time
 from streamlit_extras.st_autorefresh import st_autorefresh
 
 # Fetch live BTC price
