@@ -1,16 +1,24 @@
 
 # Bitcoin Mining ROI Dashboard
 
-This Streamlit app visualizes ROI and performance metrics for Bitcoin ASIC miners.
+This Streamlit app helps visualize ROI and compare performance of Bitcoin ASIC miners (S19j Pro, XP, Hydro).
 
-## How to Use
+## Features
 
-1. Upload the provided Excel file with ROI projections
-2. View charts and financial KPIs
-3. Compare miners side-by-side (S19 XP vs S21 Hydro - coming soon)
+- Upload Excel projections
+- View daily/monthly BTC & revenue
+- Compare miners side-by-side
+- View complete setup cost breakdown
 
-To run locally:
-```
-pip install streamlit pandas openpyxl altair
+## Run Locally
+
+```bash
+pip install -r requirements.txt
 streamlit run bitcoin_mining_dashboard.py
 ```
+
+## Deploy on Streamlit Cloud
+
+1. Upload all files to a public GitHub repo
+2. Go to https://streamlit.io/cloud
+3. Point to `bitcoin_mining_dashboard.py` as the main script
