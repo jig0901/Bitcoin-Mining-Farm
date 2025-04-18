@@ -28,13 +28,21 @@ st.subheader(f"Live BTC Price: ${btc_price:,.2f}")
 
 tab0, tab1, tab2, tab3 = st.tabs(["Overview", "S19j Pro ROI", "Miner Comparison", "Setup Cost"])
 
+
 with tab0:
     st.markdown("""
 ## 🏗️ Project Overview
 
-Explore mining profitability of used Bitmain miners (S19j Pro, S19 XP, S21 Hydro) with configurable BTC trends, number of miners, and project duration.
-    """)
+Welcome to the **Bitcoin Mining ROI Dashboard** — a live and interactive view into mining profitability using **used Bitmain S19-series miners**. This tool helps small-scale miners:
 
+- 📈 Evaluate daily/monthly revenue
+- ⚙️ Compare miner models (S19j Pro, S19 XP, S21 Hydro)
+- 💰 Account for setup cost and breakeven
+- 🔢 Simulate different numbers of miners
+- 🔄 Track profitability based on live BTC price
+
+Use the tabs above to explore detailed ROI calculations and charts.
+    """)
 with tab1:
     trend = st.radio("BTC Price Trend", ["Bullish", "Bearish"], index=0)
     suffix = "_Bullish" if trend == "Bullish" else "_Bearish"
