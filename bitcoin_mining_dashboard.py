@@ -18,6 +18,7 @@ def fetch_btc_price():
 projection_file = "Bitcoin_Mining_Projection_DashboardUI.xlsx"
 comparison_file = "Bitcoin_Mining_Comparison_WithHardwareCost.xlsx"
 
+# UI setup
 st.set_page_config(page_title="Bitcoin Mining ROI Dashboard", layout="wide")
 refresh_interval = st.sidebar.selectbox("🔁 Refresh BTC Price Every", [1, 5, 10], index=1)
 btc_price = fetch_btc_price()
@@ -43,6 +44,7 @@ Welcome to the **Bitcoin Mining ROI Dashboard** — a live and interactive view 
 Use the tabs above to explore detailed ROI calculations and charts.
     """)
 
+
 with tab1:
     btc_trend = st.radio("📈 Bitcoin Price Trend", ["Bullish", "Bearish"], index=0)
     trend_suffix = "_Bullish" if btc_trend == "Bullish" else "_Bearish"
@@ -62,8 +64,10 @@ with tab1:
                 monthly_df[col] *= scale_factor
 
         st.subheader("🔑 Key Metrics")
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Total BTC Mined", f"{df['Cumulative BTC'].iloc[-1]:.4f} BTC")
+        col0, col1, col2, col3 = st.columns(4)
+                    col0, col1, col2, col3 = st.columns(4)
+            col0.metric("Hardware Cost", f"${df_model_scaled['Hardware Cost ($)'].iloc[0]:,.2f}")
+            col1.metric("Total BTC Mined", f"{df['Cumulative BTC'].iloc[-1]:.4f} BTC")
         col2.metric("Final Net Revenue", f"${df['Final Net Revenue ($)'].iloc[-1]:,.2f}")
         breakeven = df[df['Final Net Revenue ($)'] > 0]
         if not breakeven.empty:
@@ -90,24 +94,23 @@ with tab2:
             st.subheader(f"📈 {model}")
             df_model = pd.read_excel(comparison_file, sheet_name=model, engine="openpyxl")
             df_model_scaled = df_model.copy()
-
             for col in ["BTC Mined/Day", "Net Daily Revenue ($)", "Cumulative Revenue ($)", "Cumulative BTC", "Final Net Revenue ($)"]:
                 if col in df_model_scaled.columns:
                     df_model_scaled[col] = df_model_scaled[col] * num_miners / 10
-
             df_model_scaled["Hardware Cost ($)"] = df_model["Hardware Cost ($)"] * num_miners / 10
             breakeven = df_model_scaled[df_model_scaled["Cumulative Revenue ($)"] > df_model_scaled["Hardware Cost ($)"].iloc[0]]
 
             col0, col1, col2, col3 = st.columns(4)
-            col0.metric("Hardware Cost", f"${df_model_scaled['Hardware Cost ($)'].iloc[0]:,.2f}")
-            col1.metric("Total BTC Mined", f"{df_model_scaled['Cumulative BTC'].iloc[-1]:.4f} BTC")
-            col2.metric("Final Net Revenue", f"${df_model_scaled['Final Net Revenue ($)'].iloc[-1]:,.2f}")
+                        col0, col1, col2, col3 = st.columns(4)
+        col0.metric("Hardware Cost", f"${df_model_scaled['Hardware Cost ($)'].iloc[0]:,.2f}")
+        col1.metric("Total BTC Mined", f"{df_model_scaled['Cumulative BTC'].iloc[-1]:.4f} BTC")
+        col2.metric("Final Net Revenue", f"${df_model_scaled['Final Net Revenue ($)'].iloc[-1]:,.2f}")
             if not breakeven.empty:
-                col3.metric("Breakeven Date", breakeven.iloc[0]["Date"].strftime("%Y-%m-%d"))
+        col3.metric("Breakeven Date", breakeven.iloc[0]["Date"].strftime("%Y-%m-%d"))
             else:
-                col3.metric("Breakeven Date", "Not Achieved")
+        col3.metric("Breakeven Date", "Not Achieved")
 
-            st.line_chart(df_model_scaled[["Date", "Net Daily Revenue ($)"]].set_index("Date"))
+        st.line_chart(df_model_scaled[["Date", "Net Daily Revenue ($)"]].set_index("Date"))
 
 with tab3:
     st.markdown("""
