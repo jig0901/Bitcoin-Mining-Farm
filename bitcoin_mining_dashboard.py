@@ -21,12 +21,14 @@ st.set_page_config(page_title="Bitcoin Mining ROI Dashboard", layout="wide")
 btc_price = fetch_btc_price()
 refresh = st.sidebar.selectbox("Refresh BTC Price (min)", [1, 5, 10], index=1)
 num_miners = st.sidebar.number_input("Number of Miners", 1, 100, value=10)
+view_mode = st.sidebar.radio("📅 View Mode", ["Monthly", "Daily"], index=0)
 years = st.sidebar.selectbox("Project Duration (Years)", [1, 2, 3, 4, 5], index=2)
 
 st.title("Bitcoin Mining ROI Dashboard")
 st.subheader(f"Live BTC Price: ${btc_price:,.2f}")
 
 tab0, tab1, tab2, tab3 = st.tabs(["Overview", "S19j Pro ROI", "Miner Comparison", "Setup Cost"])
+
 
 
 with tab0:
@@ -43,14 +45,15 @@ Welcome to the **Bitcoin Mining ROI Dashboard** — a live and interactive view 
 
 Use the tabs above to explore detailed ROI calculations and charts.
     """)
+
 with tab1:
     trend = st.radio("BTC Price Trend", ["Bullish", "Bearish"], index=0)
     suffix = "_Bullish" if trend == "Bullish" else "_Bearish"
     sheet1 = f"Sheet1{suffix}"
     summary = f"Monthly{suffix}"
     if os.path.exists(projection_file):
-        df = pd.read_excel(projection_file, sheet_name=sheet1)
-        monthly_df = pd.read_excel(projection_file, sheet_name=summary)
+        df = pd.read_excel(projection_file, sheet_name=sheet1).head(years * 365)
+        monthly_df = pd.read_excel(projection_file, sheet_name=summary).head(years * 12)
         df = df.head(years * 365)
         monthly_df = monthly_df.head(years * 12)
 
@@ -78,7 +81,7 @@ with tab2:
     if os.path.exists(comparison_file):
         for model in ["S19j Pro", "S19 XP", "S21 Hydro"]:
             st.subheader(f"{model}")
-            df = pd.read_excel(comparison_file, sheet_name=model).head(years * 365)
+            df = pd.read_excel(comparison_file, sheet_name=model).head(years * 365).head(years * 365)
             df_scaled = df.copy()
             for col in ["BTC Mined/Day", "Net Daily Revenue ($)", "Cumulative Revenue ($)", "Cumulative BTC", "Final Net Revenue ($)"]:
                 df_scaled[col] *= num_miners / 10
