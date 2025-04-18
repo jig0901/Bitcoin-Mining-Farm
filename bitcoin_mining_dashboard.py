@@ -63,7 +63,8 @@ with tab1:
 
         st.line_chart(monthly_scaled.set_index("Month")[["Monthly Revenue ($)"]])
         st.line_chart(monthly_scaled.set_index("Month")[["Monthly BTC Mined"]])
-        st.dataframe(df_scaled[["Date", "BTC Mined/Day", "BTC Price ($)", "Net Daily Revenue ($)", "Cumulative BTC", "Cumulative Net Revenue ($)"]])
+        columns_to_show = [c for c in ["Date", "BTC Mined/Day", "BTC Price ($)", "Net Daily Revenue ($)", "Cumulative BTC", "Cumulative Net Revenue ($)"] if c in df_scaled.columns]
+        st.dataframe(df_scaled[columns_to_show])
 
 with tab2:
     if os.path.exists(comparison_file):
