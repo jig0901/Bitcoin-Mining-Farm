@@ -2,8 +2,9 @@
 import streamlit as st
 import pandas as pd
 import requests
-import os
+from datetime import datetime, timedelta
 
+# Live BTC price fetch
 @st.cache_data(ttl=60)
 def fetch_btc_price():
     try:
@@ -12,104 +13,109 @@ def fetch_btc_price():
     except:
         return 85000
 
-# Files
-projection_file = "Bitcoin_Mining_Projection_DashboardUI.xlsx"
-comparison_file = "Bitcoin_Mining_Comparison_WithHardwareCost.xlsx"
+# Simulation of projection dynamically based on current BTC price
+def simulate_projection(base_price, growth_rate, days):
+    pool_fee = 0.015
+    difficulty_decline = 0.03
+    data = []
+    btc_price = base_price
+    # per-miner rate for S19j Pro: ~0.0000519 BTC/day
+    btc_per_day = 0.0000519 * 10
+    for day in range(days):
+        if day > 0 and day % 180 == 0:
+            btc_price *= (1 + growth_rate)
+        if day > 0 and day % 30 == 0:
+            btc_per_day *= (1 - difficulty_decline)
+        gross = btc_per_day * btc_price
+        net = gross * (1 - pool_fee)
+        data.append({
+            "Date": datetime.today() + timedelta(days=day),
+            "BTC Mined/Day": btc_per_day,
+            "BTC Price ($)": btc_price,
+            "Net Daily Revenue ($)": net
+        })
+    df = pd.DataFrame(data)
+    df["Cumulative BTC"] = df["BTC Mined/Day"].cumsum()
+    df["Cumulative Net Revenue ($)"] = df["Net Daily Revenue ($)"].cumsum()
+    df["Final Net Revenue ($)"] = df["Cumulative Net Revenue ($)"] - 6500 - 600 - 400 - 750 - 450
+    df["Month"] = df["Date"].dt.to_period("M").dt.to_timestamp()
+    return df
 
-# UI
+# UI Setup
 st.set_page_config(page_title="Bitcoin Mining ROI Dashboard", layout="wide")
 btc_price = fetch_btc_price()
-refresh = st.sidebar.selectbox("Refresh BTC Price (min)", [1, 5, 10], index=1)
-num_miners = st.sidebar.number_input("Number of Miners", 1, 100, value=10)
-view_mode = st.sidebar.radio("📅 View Mode", ["Monthly", "Daily"], index=0)
-years = st.sidebar.selectbox("Project Duration (Years)", [1, 2, 3, 4, 5], index=2)
+refresh = st.sidebar.selectbox("🔁 Refresh BTC Price (min)", [1,5,10], index=1)
+num_miners = st.sidebar.number_input("🔢 Number of Miners", 1, 100, value=10)
+years = st.sidebar.selectbox("🗓️ Project Duration (Years)", [1,2,3,4,5], index=2)
+view_mode = st.sidebar.radio("📅 View Mode", ["Monthly","Daily"], index=0)
+trend = st.sidebar.radio("📈 BTC Price Trend", ["Bullish","Bearish"], index=0)
 
-st.title("Bitcoin Mining ROI Dashboard")
-st.subheader(f"Live BTC Price: ${btc_price:,.2f}")
+st.title("📊 Bitcoin Mining ROI Dashboard")
+st.subheader(f"💰 Live BTC Price: ${btc_price:,.2f}")
 
-tab0, tab1, tab2, tab3 = st.tabs(["Overview", "S19j Pro ROI", "Miner Comparison", "Setup Cost"])
-
-
+# Tabs
+tab0, tab1, tab2, tab3 = st.tabs(["Overview","S19j Pro ROI","Miner Comparison","Setup Cost"])
 
 with tab0:
     st.markdown("""
 ## 🏗️ Project Overview
 
-Welcome to the **Bitcoin Mining ROI Dashboard** — a live and interactive view into mining profitability using **used Bitmain S19-series miners**. This tool helps small-scale miners:
-
-- 📈 Evaluate daily/monthly revenue
-- ⚙️ Compare miner models (S19j Pro, S19 XP, S21 Hydro)
-- 💰 Account for setup cost and breakeven
-- 🔢 Simulate different numbers of miners
-- 🔄 Track profitability based on live BTC price
-
-Use the tabs above to explore detailed ROI calculations and charts.
+This dashboard uses the **current BTC price** to dynamically project revenue and ROI for a set of used Bitmain miners. Adjust:
+- Number of miners
+- Project duration
+- Price trend (Bullish/Bearish)
+- View mode (Monthly/Daily)
     """)
 
 with tab1:
-    trend = st.radio("BTC Price Trend", ["Bullish", "Bearish"], index=0)
-    suffix = "_Bullish" if trend == "Bullish" else "_Bearish"
-    sheet1 = f"Sheet1{suffix}"
-    summary = f"Monthly{suffix}"
-    if os.path.exists(projection_file):
-        df = pd.read_excel(projection_file, sheet_name=sheet1).head(years * 365)
-        monthly_df = pd.read_excel(projection_file, sheet_name=summary).head(years * 12)
-        df = df.head(years * 365)
-        monthly_df = monthly_df.head(years * 12)
+    growth = 0.10 if trend=="Bullish" else -0.05
+    days = years * 365
+    df = simulate_projection(btc_price, growth, days)
+    factor = num_miners / 10
+    df[["BTC Mined/Day","Net Daily Revenue ($)","Cumulative BTC","Cumulative Net Revenue ($)","Final Net Revenue ($)"]] *= factor
 
-        df_scaled = df.copy()
-        monthly_scaled = monthly_df.copy()
-        for col in ["BTC Mined/Day", "Net Daily Revenue ($)", "Cumulative BTC", "Cumulative Net Revenue ($)", "Final Net Revenue ($)"]:
-            df_scaled[col] *= num_miners / 10
-        for col in ["Monthly Revenue ($)", "Monthly BTC Mined", "Cumulative Revenue ($)", "Cumulative BTC Mined"]:
-            monthly_scaled[col] *= num_miners / 10
+    col0,col1,col2,col3 = st.columns(4)
+    col0.metric("Project Duration", f"{years} yrs")
+    col1.metric("Total BTC Mined", f"{df['Cumulative BTC'].iloc[-1]:.4f} BTC")
+    col2.metric("Final Net Revenue", f"${df['Final Net Revenue ($)'].iloc[-1]:,.2f}")
+    brek = df[df['Final Net Revenue ($)']>0]
+    col3.metric("Breakeven", brek.iloc[0]["Date"].strftime("%Y-%m-%d") if not brek.empty else "Not Achieved")
 
-        st.subheader("Key Metrics")
-        col0, col1, col2, col3 = st.columns(4)
-        col0.metric("Project Duration", f"{years} years")
-        col1.metric("Total BTC Mined", f"{df_scaled['Cumulative BTC'].iloc[-1]:.4f}")
-        col2.metric("Final Net Revenue", f"${df_scaled['Final Net Revenue ($)'].iloc[-1]:,.2f}")
-        roi = df_scaled[df_scaled["Final Net Revenue ($)"] > 0]
-        col3.metric("Breakeven", roi.iloc[0]["Date"].strftime("%Y-%m-%d") if not roi.empty else "Not Achieved")
+    if view_mode=="Monthly":
+        monthly = df.groupby("Month").agg({
+            "Net Daily Revenue ($)":"sum",
+            "BTC Mined/Day":"sum",
+            "BTC Price ($)":"mean"
+        }).rename(columns={
+            "Net Daily Revenue ($)":"Monthly Revenue ($)",
+            "BTC Mined/Day":"Monthly BTC Mined",
+            "BTC Price ($)":"Avg BTC Price ($)"
+        })
+        st.subheader("📊 Monthly Revenue")
+        st.line_chart(monthly[["Monthly Revenue ($)"]])
+        st.subheader("📊 Monthly BTC Mined")
+        st.line_chart(monthly[["Monthly BTC Mined"]])
+        st.subheader("📋 Monthly Projection Table")
+        st.dataframe(monthly)
 
-        st.line_chart(monthly_scaled.set_index("Month")[["Monthly Revenue ($)"]])
-        st.line_chart(monthly_scaled.set_index("Month")[["Monthly BTC Mined"]])
-        columns_to_show = [c for c in ["Date", "BTC Mined/Day", "BTC Price ($)", "Net Daily Revenue ($)", "Cumulative BTC", "Cumulative Net Revenue ($)"] if c in df_scaled.columns]
-        st.dataframe(df_scaled[columns_to_show])
+    else:
+        st.subheader("📊 Daily Net Revenue")
+        st.line_chart(df.set_index("Date")[["Net Daily Revenue ($)"]])
+        st.subheader("📊 Daily BTC Mined")
+        st.line_chart(df.set_index("Date")[["BTC Mined/Day"]])
+        st.subheader("📋 Daily Projection Table")
+        st.dataframe(df[["Date","BTC Mined/Day","BTC Price ($)","Net Daily Revenue ($)"]])
 
 with tab2:
-    if os.path.exists(comparison_file):
-        for model in ["S19j Pro", "S19 XP", "S21 Hydro"]:
-            st.subheader(f"{model}")
-            df = pd.read_excel(comparison_file, sheet_name=model).head(years * 365).head(years * 365)
-            df_scaled = df.copy()
-            for col in ["BTC Mined/Day", "Net Daily Revenue ($)", "Cumulative Revenue ($)", "Cumulative BTC", "Final Net Revenue ($)"]:
-                df_scaled[col] *= num_miners / 10
-            cost = df["Hardware Cost ($)"].iloc[0] * num_miners / 10
-            roi = df_scaled[df_scaled["Cumulative Revenue ($)"] > cost]
-
-            c0, c1, c2, c3, c4 = st.columns(5)
-            c0.metric("Duration", f"{years} yrs")
-            c1.metric("Cost", f"${cost:,.0f}")
-            c2.metric("BTC Mined", f"{df_scaled['Cumulative BTC'].iloc[-1]:.4f}")
-            c3.metric("Net Revenue", f"${df_scaled['Final Net Revenue ($)'].iloc[-1]:,.2f}")
-            c4.metric("Breakeven", roi.iloc[0]["Date"].strftime("%Y-%m-%d") if not roi.empty else "Not Achieved")
-
-            st.line_chart(df_scaled.set_index("Date")[["Net Daily Revenue ($)"]])
+    st.markdown("Miner comparison not implemented in this dynamic view.")
 
 with tab3:
-    st.markdown("""
-### Setup Cost Breakdown
+    st.markdown("""### Setup Cost
 
-| Component            | Description                             | Cost   |
-|---------------------|-----------------------------------------|--------|
-| ⚡ Power Line        | 100 ft trench + 240V wiring             | $6,500 |
-| 🗄️ Rack              | Rack for 10 miners                      | $600   |
-| 🔌 PDUs              | 30A power units                         | $400   |
-| 🌬️ Ventilation       | Intake + exhaust fan setup              | $750   |
-| 🔇 Soundproofing     | Foam, seals, noise reduction            | $450   |
+- Power Line: $6500  
+- Rack: $600  
+- PDUs: $400  
+- Ventilation: $750  
+- Soundproofing: $450  
 
-**Total: $8,700**
-    """)
-    st.image("roi_bar_chart_scaled.png")
-    st.image("payback_time_chart_scaled.png")
+**Total: $8700**""")
